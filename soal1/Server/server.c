@@ -69,13 +69,19 @@ void *ready(void *arg){
 	int cid = cl.cid;
 	int log = cl.login;
 	
+	while(conn_cek);
+	conn_cek = 1;
+	
 	while(log){
+		send(cid, "ready", 5, 0);
+		
 		char data[1024], id[1024], ps[1024], kode;
 		memset(data, 0, sizeof(data));
 		read(cid, data, sizeof(data));
 		
 		if(strcmp(data, "exit") == 0){
 			printf("Exit berhasil\n");
+			conn_cek = 0;
 			break;
 		}
 		
@@ -166,7 +172,7 @@ void *ready(void *arg){
 						FILE *fsrc = fopen(path, "r");
 						if(fsrc == NULL){
 							printf("File tidak ada\n");
-							send(cid, "Gagal", 6, 0);
+							send(cid, "Gagal", 5, 0);
 						}
 						else{
 							FILE *fdst = fopen(destP, "w");
@@ -242,7 +248,7 @@ void *ready(void *arg){
 						}
 						else{
 							printf("File tidak ada\n");
-							send(cid, "Gagal", 6, 0);
+							send(cid, "Gagal", 5, 0);
 						}
 					}
 					else if(strcmp(cmd, "delete") == 0){
@@ -296,7 +302,7 @@ void *ready(void *arg){
 						}
 						else{
 							printf("File tidak ada\n");
-							send(cid, "Gagal", 6, 0);
+							send(cid, "Gagal", 5, 0);
 						}
 					}
 					else if(strcmp(cmd, "see") == 0){
@@ -380,7 +386,7 @@ void *ready(void *arg){
 						}
 						else{
 							printf("File tidak ada\n");
-							send(cid, "Gagal", 6, 0);
+							send(cid, "Gagal", 5, 0);
 						}
 					}
 					else if(strcmp(cmd, "logout") == 0){
@@ -482,27 +488,22 @@ int main(int argc, char const *argv[]) {
 	conn = 0;
 	conn_cek = 0;
 	
-	pthread_t th;
 	int client;
-	client = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
-    if (client < 0) {
+	while(client = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)){
+		printf("Client accepted\n");
+		
+		pthread_t th;
+		client_serv client_baru;
+		client_baru.cid = client;
+		client_baru.login = 1;
+		
+		pthread_create(&th, NULL, ready, (void *) &client_baru);
+		//pthread_join(th, NULL);
+	}
+	if (client < 0) {
         perror("accept");
         exit(EXIT_FAILURE);
     }
-	printf("Client accepted\n");
-	client_serv client_baru;
-	client_baru.cid = client;
-	client_baru.login = 1;
-	pthread_create(&th, NULL, ready, (void *) &client_baru);
-	pthread_join(th, NULL);
-	
-	/*while(1){
-		client_serv p;
-		p.cid = client;
-		p.login = 1;
-		pthread_create(&th, NULL, ready, (void *) &p);
-		pthread_join(th, NULL);
-	}*/
 	
 	close(client);
     return 0;
