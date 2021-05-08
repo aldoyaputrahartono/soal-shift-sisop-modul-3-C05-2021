@@ -498,16 +498,11 @@ void* categorize(void *arg){
 	
 	char destP[400];
 	sprintf(destP, "%s/%s/%s", curr, ext, srcName);
-	//printf("dest: %s (%s) %s\n", destP, ext, srcP);
-	
-	//pthread_mutex_lock(&signal);
-	//if(rename(srcP, destP) != 0) fprintf(stderr,"error: %s\n\n",strerror(errno));
-	//pthread_mutex_unlock(&signal);
 	
 	rename(srcP, destP);
 }
 ```
-Fungsi chaeckName untuk mengecek dan mendapatkan nama dari suatu file yang diinputkan.
+Fungsi checkName untuk mengecek dan mendapatkan nama dari suatu file yang diinputkan.
 ```
 char *checkName(char *dir){
 	char *name = strrchr(dir, '/');
@@ -524,7 +519,7 @@ Dan yang terakhir di nomor 3a ini yaitu membuat thread join dari semua thread ya
 
 #
 ### Jawab 3b
-Jawab 3b
+Untuk nomor 3b ini 
 
 #
 ### Jawab 3c
