@@ -630,4 +630,5 @@ Soal 3e kita diminta untuk membuat setiap thread untuk setiap file yang akan dik
 
 #
 ### Kendala
-Isi kendala
+- Sempat kebingungan dalam membuat dan menjalankan program dengan menggunakan prinsip rekursif.
+- Thread tidak berjalan sesuai keinginan dan dapat diselesaikan dengan menjoinkannya.
