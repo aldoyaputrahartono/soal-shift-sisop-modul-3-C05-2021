@@ -261,14 +261,14 @@ printf("Matrix Hasil: \n");
 		printf("\n");
 	}
 ```
-kita juga menambahkan :
+kita juga menambahkan untuk menggunakan shared memory karena matriks hasil akan digunakan pada soal berikutnya :
 ```
 key_t key = 1234;
 	int *value;
 	int shmid = shmget(key, sizeof(int) * 24, IPC_CREAT | 0644);
 	value = shmat(shmid, NULL, 0);
 ```
-yang akan digunakan untuk soal nomor 2b
+
 
 
 #
@@ -330,7 +330,7 @@ printf("Matrix B: \n");
 	printf("\n\n");
     
 ```
-lalu kita mengalikan kedua matriks yang sudah terpanggil menggunakan fungsi berikut :
+lalu kita mengkalikan kedua matriks yang sudah terpanggil menggunakan fungsi berikut :
 ```
 
 printf("Matrix Hasil: \n");
@@ -344,6 +344,59 @@ printf("Matrix Hasil: \n");
  #
 ### Jawab 2c
 Jawab 2c
+pada soal ini kita diminta untuk mencari 5 proses teratas yang memakan resources komputer menggunakan command ```ps aux| sort -nrk 3,3|head -5``` pertama kita membuat command yang menampilkan seluruh proses pada user lalu kita menggunakan pipe-fork untuk menjalankan program tersebut
+```
+int main(){
+	pid_t child_id;
+	int status;
+	int fp1[2];
+	int fp2[2];
+	char output[1000];
+	
+	if(pipe(fp1)==-1){
+		fprintf(stderr, "Pipe Failed" );
+		return 1;
+	}
+	if(pipe(fp2)==-1){
+		fprintf(stderr, "Pipe Failed" );
+		return 1;
+	}
+	
+	child_id = fork();
+	if(child_id < 0) exit(0);
+	if(child_id == 0){
+		dup2(fp1[1], STDOUT_FILENO);
+		close(fp1[0]);
+		char *argv[] = {"ps", "aux", NULL};
+		execv("/bin/ps", argv);
+	}
+```
+
+lalu setelah kita menampilkan seluruh proses user kita mengurutkan menggunakan sort :
+```
+while(wait(&status) > 0);
+	dup2(fp1[0], STDIN_FILENO);
+	close(fp1[1]);
+	
+	child_id = fork();
+	if(child_id < 0) exit(0);
+	if(child_id == 0){
+		dup2(fp2[1], STDOUT_FILENO);
+		close(fp2[0]);
+		char *argv[] = {"sort", "-nrk", "3,3", NULL};
+		execv("/usr/bin/sort", argv);
+```
+
+lalu setelah mengurutkan kita menyeleksi menjadi 5 saja proses yang paling banyak memakan resource pada komputer
+```
+while(wait(&status) > 0);
+	dup2(fp2[0], STDIN_FILENO);
+	close(fp2[1]);
+	char *argv[] = {"head", "-5", NULL};
+	execv("/usr/bin/head", argv);
+	return 0;
+```
+pada soal ini kita menggunakan fungsi ```fork``` yang berguna untuk spawning process,lalu kita menggunakan ```wait``` untuk menunggu process menyelesaikan tugasnya terlebih dahulu lalu ```exec``` digunakan untuk menjalankan program baru dan menggantikan program yang sedang berjalan.
 
 #
 ### Kendala
