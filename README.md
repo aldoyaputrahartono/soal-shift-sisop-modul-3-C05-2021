@@ -460,7 +460,7 @@ Catatan:
 
 #
 ### Jawab 3a
-Pada soal ini kita diminta untuk mengkategorikan file dalam suatu folder sesuai dengan ekstensinya. Untuk soal nomor 3a ini program dapat menerima opsi -f yang artinya pengguna dapat menambahkan argumen file yang bisa dikategorikan sesuai dengan keinginan. Hal pertama yang dilakukan yakni mengecek kesesuaian argc dan argv yang ada.
+Pada soal ini kita diminta untuk mengkategorikan file dalam suatu folder sesuai dengan ekstensinya. Untuk soal nomor 3a ini program dapat menerima opsi `-f` yang artinya pengguna dapat menambahkan argumen file yang bisa dikategorikan sesuai dengan keinginan. Hal pertama yang dilakukan yakni mengecek kesesuaian argc dan argv yang ada.
 ```
 if(argc > 2 && strcmp(argv[1], "-f") == 0){
 	...	
@@ -479,7 +479,7 @@ Selanjutnya menginisialisasi thread dan variabel count yang digunakan untuk meng
 		else printf("File %d : Sad, gagal :(\n", i-1);
 	}
 ```
-Untuk fungsi categorize untuk membuat pengkategorian file, dimulai dari pencarian ekstensi file, pembuatan folder dan pencarian nama file. 
+Untuk fungsi `categorize` yaitu membuat pengkategorian file, dimulai dari pencarian ekstensi file, pembuatan folder dan pencarian nama file. 
 ```
 void* categorize(void *arg){
 	char *src = (char *)arg;
@@ -502,7 +502,7 @@ void* categorize(void *arg){
 	rename(srcP, destP);
 }
 ```
-Fungsi checkName untuk mengecek dan mendapatkan nama dari suatu file yang diinputkan.
+Fungsi `checkName` untuk mengecek dan mendapatkan nama dari suatu file yang diinputkan.
 ```
 char *checkName(char *dir){
 	char *name = strrchr(dir, '/');
@@ -516,19 +516,113 @@ Dan yang terakhir di nomor 3a ini yaitu membuat thread join dari semua thread ya
 		return 0;
 ```
 
-
 #
 ### Jawab 3b
-Untuk nomor 3b ini 
+Untuk nomor 3b ini input yang diberikan berupa opsi `-d` yang artinya pengguna hanya bisa memasukkan input 1 directory saja. Hal pertama yang dilakukan pastinya mengecek kesesuaian argc dan argv yang ada. Lalu membuka direktori/folder yang diinputkan, jika folder tersebut ditemukan maka akan dicari berapa jumlah file yang ada didalamnya sehingga kita bisa menyesuaiakannya dengan thread yang akan dibuat. Selanjutnya membuat pengkategorian file dengan menggunakan thread dan menampilkan keterangan outputnya. 
+```
+else if(argc == 3 && strcmp(argv[1], "-d") == 0){
+		DIR *fd = opendir(argv[2]);
+		if(fd){
+			struct dirent *dp;
+			int threadSize = 0;
+			while((dp = readdir(fd)) != NULL){
+				if(dp->d_type == DT_REG){
+					threadSize++;
+				}
+			}
+			categorizeFolder(argv[2], threadSize);
+			closedir(fd);
+			printf("Direktori sukses disimpan!\n");
+		}
+		else if(ENOENT == errno) printf("Yah, gagal disimpan :(\n");
+	}
+```
+Untuk fungsi `categorizeFolder` yaitu untuk membuat pengkategorian file berdasarkan ekstensinya yang dimulai dengan membuka direktori yang diinputkan lalu mengecek setiap file dalam direktori tersebut untuk nanti selanjutnya akan dibuat kategorisasinya. Jika didalam direktori tersebut ditemukan juga folder yang lain maka juga akan dibuat pengkategorian file didalam folder tersebut dengan langkah yang sama dengan sebelumnya dengan menggunakan prinsip rekursi.  
+```
+void categorizeFolder(char *folderPath, int threadSize){
+	DIR *fd = opendir(folderPath);
+	struct dirent *dp;
+	pthread_t tid[threadSize];
+	int count = 0;
+	char fileName[400][400];
+	
+	while((dp = readdir(fd)) != NULL){
+		if(dp->d_type == DT_REG){
+			sprintf(fileName[count], "%s/%s", folderPath, dp->d_name);
+			pthread_create(&tid[count], NULL, categorize, (void *)fileName[count]);
+			count++;
+		}
+		else if((dp->d_type == DT_DIR) && strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0) {
+            char folderPath2[400];
+            sprintf(folderPath2, "%s/%s", folderPath, dp->d_name);
+            DIR *fd2 = opendir(folderPath2);
+            struct dirent *dp2;
+			int threadSize2 = 0;
+			while((dp2 = readdir(fd2)) != NULL){
+				if(dp2->d_type == DT_REG){
+					threadSize2++;
+				}
+			}
+			categorizeFolder(folderPath2, threadSize2);
+			closedir(fd2);
+        }
+	}
+	
+	for(int i=0; i<threadSize; i++) pthread_join(tid[i], NULL);
+    closedir(fd);
+}
+```
 
 #
 ### Jawab 3c
-Jawab 3c
+Tidak berbeda jauh dengan 3b, dalam soal nomor 3c ini kita juga diminta untuk mengkategorikan file dalam suatu folder, perbedaannya terdapat dalam opsi input yang diberikan yakni `*` yang artinya akan mengkategorikan seluruh file yang ada di working directory ketika menjalankan program C tersebut. Untuk fungsi `categorizeFolder` sama seperti yang sudah dijelaskan sebelumnya.
+```
+else if(argc == 2 && strcmp(argv[1], "*") == 0){
+		char *curr = getenv("PWD");
+		DIR *dir = opendir(curr);
+		struct dirent *dp;
+		int threadSize = 0;
+		while((dp = readdir(dir)) != NULL){
+			if(dp->d_type == DT_REG){
+				threadSize++;
+			}
+		}
+		categorizeFolder(curr, threadSize);
+		closedir(dir);
+	}
+```
 
 #
 ### Jawab 3d
-Jawab 3d
-
+Untuk soal 3d ini semua file harus ada dalam satu folder sesuai ekstensinya dimana jika terdapat file yang tidak memiliki ekstensi akan disimpan dalam folder `Unknown` dan jika file hidden akan masuk folder `Hidden`. Hal ini telah diatur dalam suatu fungsi yakni `checkExt` yang berfungsi untuk mengecek ekstensi dari sebuah file dimana fungsi ini terdapat dalam fungsi `categorize` yang telah dijelaskan sebelumnya.
+```
+char *checkExt(char *dir){
+	char *unk = {"Unknown"};
+	char *hid = {"Hidden"};
+	char *tmp = strrchr(dir, '/');
+	if(tmp[1] == '.') return hid;
+	
+	int i = 0;
+	while(i < strlen(tmp) && tmp[i] != '.') i++;
+	if(i == strlen(tmp)) return unk;
+	
+	char ext[400];
+	int j = i;
+	while(i < strlen(tmp)) ext[i-j] = tmp[i], i++;
+	return lowercase(ext + 1);
+}
+```
+Lalu juga ada fungsi `lowercase` untuk mengubah nama ekstensinya tidak menjadi huruf besar.
+```
+char *lowercase(char *str){
+	unsigned char *temp = (unsigned char *)str;
+	while(*temp){
+		*temp = tolower(*temp);
+		temp++;
+	}
+	return str;
+}
+```
 #
 ### Jawab 3e
 Jawab 3e
