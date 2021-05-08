@@ -194,12 +194,154 @@ Note:
 #
 ### Jawab 2a
 Jawab 2a
+pada soal 2a kita diminta untuk membuat matriks yang ber ordo 4x3 dan 3x6 yang berisikan angka 1-20 lalu kita mengkalikan kedua matriks tersebut menjadi matriks hasil :
+
+```
+matriks 4x3
+
+int sum = 0;
+	int first[4][3] = {
+		{2, 1, 1},
+		{1, 2, 0},
+		{2, 0, 1},
+		{0, 2, 0}
+	};
+```
+
+```
+matriks 3x6
+
+int second[3][6] = {
+		{1, 2, 0, 1, 2, 1},
+		{1, 2, 2, 0, 2, 0},
+		{0, 1, 0, 1, 0, 1}
+	};
+    
+```
+lalu kita membuat pengelompokkan dan mengurutkan pada baris dan kolom dan membuatnya menjadi bentuk matriks untuk memudahkan perkalian matriks :
+
+```
+printf("Matrix 4x3: \n");
+	for(int i=0; i<4; i++){
+		for(int j=0; j<3; j++){
+			printf("%d\t", first[i][j]);
+		}
+		printf("\n");
+        
+        
+	printf("Matrix 3x6: \n");
+	for(int i=0; i<3; i++){
+		for(int j=0; j<6; j++){
+			printf("%d\t", second[i][j]);
+		}
+        
+```
+kita mengkalikan kedua matriks yang terbentuk menjadi satu matriks hasil :
+```
+for(int i=0; i<4; i++){
+		for(int j=0; j<6; j++){
+			for(int k=0; k<3; k++) {
+				sum = sum + first[i][k] * second[k][j];
+			}
+			multiply[i][j] = sum;
+			sum = 0;
+		}
+	}
+	
+```
+pada matriks hasil kita menggunakan prinsip perkalian matriks untuk menentukan ordo dari matriks hasil yaitu ketika A X B dan B X C maka ordo tersebut akan menjadi A X C , pada soal ini kita mengalikan matriks yang ber ordo 4 X 3 dan 3 X 6 sehingga bentuk dari matriks hasil adalah 4 X 6 sehingga kita membuat fungsi untuk matriks hasil dengan 
+```int multiply[4][6];``` dengan isi :
+```
+printf("Matrix Hasil: \n");
+	for(int i=0; i<4; i++){
+		for(int j=0; j<6; j++){
+			value[6*i+j] = multiply[i][j];
+			printf("%d\t",multiply[i][j]);
+		}
+		printf("\n");
+	}
+```
+kita juga menambahkan :
+```
+key_t key = 1234;
+	int *value;
+	int shmid = shmget(key, sizeof(int) * 24, IPC_CREAT | 0644);
+	value = shmat(shmid, NULL, 0);
+```
+yang akan digunakan untuk soal nomor 2b
+
 
 #
 ### Jawab 2b
 Jawab 2b
+pada soal ini kita diminta mengoperasikan kembali matriks a yang kita dapat pada soal 2a dengan soal b yang terdapat pada soal,untuk pengoperasiannya terdapat beberapa ketentuan dimana matrik A menjadi angka untuk faktorian lalu matriks b menjadi batas maksimal faktorialnya dengan ini kita mendapat rules 
 
-#
+jika a>=b  maka a!/(a-b)!
+jika b > a maka a!
+jika 0 maka output akan tetap 0
+
+```
+void *fact(void* arg){
+	data* d = (data*) arg;
+	if(d->angka1 == 0 || d->angka2 == 0) d->hasil = 0;
+	else if(d->angka1 < d->angka2) d->hasil = faktorial(d->angka1);
+	else d->hasil = faktorial(d->angka1) / faktorial(d->angka1 - d->angka2);
+}
+```
+
+pertama kita membuat matriks b dan memanggil matriks hasil pada soal 2a menggunakan shared memory :
+```
+void main(){
+	key_t key = 1234;
+	int *value;
+	int shmid = shmget(key, sizeof(int) * 24, IPC_CREAT | 0644);
+	value = shmat(shmid, NULL, 0);
+	
+	int matrixB[24] = {
+		1, 9, 0, 1, 2, 1,
+		1, 2, 2, 0, 2, 0,
+		0, 1, 7, 1, 0, 1,
+		1, 2, 0, 1, 6, 1
+	};
+    
+```
+lalu kita memanggil matriks hasil pada soal 2a untuk dimasukan kedalam matrik a pada soal ini,kita menggunakan mutual exclusion sehingga code nya menjadi :
+```
+pthread_t tid[24];
+	data d[24];
+	printf("Matrix A: \n");
+	for(int i=0; i<24; i++){
+		d[i].angka1 = value[i];
+		d[i].angka2 = matrixB[i];
+		if(i%6 == 0 && i != 0) printf("\n");
+		printf("%d\t", value[i]);
+		pthread_create(&tid[i], NULL, &fact, (void*)&d[i]);
+	}
+    
+```
+kita juga memanggil matriks b pada fungsi berikut :
+```
+printf("Matrix B: \n");
+	for(int i=0; i<24; i++){
+		if(i%6 == 0 && i != 0) printf("\n");
+		printf("%d\t", matrixB[i]);
+		pthread_join(tid[i],NULL);
+	}
+	printf("\n\n");
+    
+```
+lalu kita mengalikan kedua matriks yang sudah terpanggil menggunakan fungsi berikut :
+```
+
+printf("Matrix Hasil: \n");
+	for(int i=0; i<24; i++){
+		if(i%6 == 0 && i != 0) printf("\n");
+		printf("%lld\t", d[i].hasil);
+	}
+    
+```
+
+ #
 ### Jawab 2c
 Jawab 2c
 
