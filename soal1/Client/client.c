@@ -36,6 +36,15 @@ int main(int argc, char const *argv[]) {
 	char cmd[1024], cmd2[1024], username[1024], pass[1024], temp[1024];
 	
 	while(1){
+		printf("Harap Menunggu\n\n");
+		char stat[1024] = {0};
+		read(sock, stat, sizeof(stat));
+		while(strcmp(stat, "ready") != 0){
+			memset(stat, 0, sizeof(stat));
+			read(sock, stat, sizeof(stat));
+		}
+		memset(stat, 0, sizeof(stat));
+		
 		printf("Menu:\n1. Register\n2. Login\n3. Exit\nPilih: ");
 		scanf("%s", cmd);
 		if(strcmp(cmd, "register") == 0){
@@ -69,7 +78,6 @@ int main(int argc, char const *argv[]) {
 			read(sock, &feedback, sizeof(feedback));
 			if(feedback){
 				printf("Login berhasil\n");
-				//send(sock, "sukses", 6, 0);
 				while(1){
 					printf("Perintah:\n1. Add\n2. Download\n3. Delete\n4. See\n5. Find\n6. Logout\nPilih: ");
 					scanf("%s", cmd2);
@@ -166,11 +174,6 @@ int main(int argc, char const *argv[]) {
 			break;
 		}
 		else printf("Input salah\n");
-		
-		
-		//valread = read(sock, buffer, 1024);
-		//printf("%s\n", buffer);
-		//memset(buffer, 0, 1024);
 	}
 	
 	close(sock);
