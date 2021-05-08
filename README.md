@@ -460,7 +460,67 @@ Catatan:
 
 #
 ### Jawab 3a
-Jawab 3a
+Pada soal ini kita diminta untuk mengkategorikan file dalam suatu folder sesuai dengan ekstensinya. Untuk soal nomor 3a ini program dapat menerima opsi -f yang artinya pengguna dapat menambahkan argumen file yang bisa dikategorikan sesuai dengan keinginan. Hal pertama yang dilakukan yakni mengecek kesesuaian argc dan argv yang ada.
+```
+if(argc > 2 && strcmp(argv[1], "-f") == 0){
+	...	
+	}
+```
+Selanjutnya menginisialisasi thread dan variabel count yang digunakan untuk menghitung banyaknya file yang berhasil dikategorikan. Lalu kita membuat thread yang mengkategorikan file berdasarkan ekstensinya.
+```
+        pthread_t tid[argc-2];
+	int count = 0;
+	for(int i=2; i<argc; i++){
+		if(access(argv[i], F_OK) == 0){
+			pthread_create(&tid[count], NULL, categorize, (void *)argv[i]);
+			count++;
+			printf("File %d : Berhasil Dikategorikan\n", i-1);
+		}
+		else printf("File %d : Sad, gagal :(\n", i-1);
+	}
+```
+Untuk fungsi categorize untuk membuat pengkategorian file, dimulai dari pencarian ekstensi file, pembuatan folder dan pencarian nama file. 
+```
+void* categorize(void *arg){
+	char *src = (char *)arg;
+	char srcP[150];
+	memcpy(srcP, (char*)arg, 400);
+	char *srcExt = checkExt(src);
+	char ext[400];
+	strcpy(ext, srcExt);
+	
+	DIR *dir = opendir(srcExt);
+	if(dir) closedir(dir);
+	else if(ENOENT == errno) mkdir(srcExt, 0755);
+	
+	char *srcName = checkName(srcP);
+	char *curr = getenv("PWD");
+	
+	char destP[400];
+	sprintf(destP, "%s/%s/%s", curr, ext, srcName);
+	//printf("dest: %s (%s) %s\n", destP, ext, srcP);
+	
+	//pthread_mutex_lock(&signal);
+	//if(rename(srcP, destP) != 0) fprintf(stderr,"error: %s\n\n",strerror(errno));
+	//pthread_mutex_unlock(&signal);
+	
+	rename(srcP, destP);
+}
+```
+Fungsi chaeckName untuk mengecek dan mendapatkan nama dari suatu file yang diinputkan.
+```
+char *checkName(char *dir){
+	char *name = strrchr(dir, '/');
+	if(name == dir) return "";
+	return name + 1;
+}
+```
+Dan yang terakhir di nomor 3a ini yaitu membuat thread join dari semua thread yang telah dibuat sebelumnya.
+```
+         for(int i=0; i<count; i++) pthread_join(tid[i], NULL);
+		return 0;
+```
+
 
 #
 ### Jawab 3b
