@@ -623,9 +623,10 @@ char *lowercase(char *str){
 	return str;
 }
 ```
+
 #
 ### Jawab 3e
-Jawab 3e
+Soal 3e kita diminta untuk membuat setiap thread untuk setiap file yang akan dikategorikan agar bisa berjalan secara paralel sehingga proses kategori bisa berjalan lebih cepat. Oleh karena itu, kami membuat thread sesuai dengan jumlah file yang akan dikategorikan lalu menjoinkan tiap thread yang dijalankan. Hal tersebut telah dibuat dalam program dan fungsi yang telah dijelaskan sebelumnya.
 
 #
 ### Kendala
