@@ -159,6 +159,7 @@ Isi kendala
 Crypto (kamu) adalah teman Loba. Suatu pagi, Crypto melihat Loba yang sedang kewalahan mengerjakan tugas dari bosnya. Karena Crypto adalah orang yang sangat menyukai tantangan, dia ingin membantu Loba mengerjakan tugasnya. Detil dari tugas tersebut adalah:
 
 a. Membuat program perkalian matrix (4x3 dengan 3x6) dan menampilkan hasilnya. Matriks nantinya akan berisi angka 1-20 (tidak perlu dibuat filter angka).
+
 b. Membuat program dengan menggunakan matriks output dari program sebelumnya (program soal2a.c) (**Catatan!:** gunakan shared memory). Kemudian matriks tersebut akan dilakukan perhitungan dengan matrix baru sebagai berikut contoh perhitungan untuk matriks yang ada. Perhitungannya adalah setiap cel yang berasal dari matriks A menjadi angka untuk faktorial, lalu cel dari matriks B menjadi batas maksimal faktorialnya (dari paling besar ke paling kecil) (**Catatan!:** gunakan thread untuk perhitungan di setiap cel). 
 
 **Ketentuan**
@@ -169,21 +170,21 @@ If 0 -> 0
 ```
 
 Contoh :
-| A	| B |	Angka-Angka Faktorial |
+| A | B | Angka-Angka Faktorial |
 |---|---|-----------------------|
-| 4	| 4	| 4 3 2 1               |
-| 4	| 5	| 4 3 2 1               |
-| 4	| 3	| 4 3 2                 |
-| 4	| 0	| 0                     |
-| 0	| 4	| 0                     |
-| 4	| 6	| 4 3 2 1               |
+| 4 | 4	| 4 3 2 1               |
+| 4 | 5	| 4 3 2 1               |
+| 4 | 3	| 4 3 2                 |
+| 4 | 0	| 0                     |
+| 0 | 4	| 0                     |
+| 4 | 6	| 4 3 2 1               |
 
 Contoh :
-| Matriks A |	Matriks B	|        Matriks Hasil       |
+| Matriks A | Matriks B	|        Matriks Hasil       |
 |-----------|-----------|----------------------------|
-|   0	  4   |   0  	4   | 0	              4\*3\*2\*1 |
-|   4	  5   |   6	  2	  | 4\*3\*2\*1	    5\*4       |
-|   5	  6   |   6  	0	  | 5\*4\*3\*2\*1   0          |
+|   0   4   |   0   4   | 0               4\*3\*2\*1 |
+|   4   5   |   6   2   | 4\*3\*2\*1      5\*4       |
+|   5   6   |   6   0   | 5\*4\*3\*2\*1   0          |
 
 c. Karena takut lag dalam pengerjaannya membantu Loba, Crypto juga membuat program (soal2c.c) untuk mengecek 5 proses teratas apa saja yang memakan resource komputernya dengan command `ps aux | sort -nrk 3,3 | head -5` (**Catatan!:** Harus menggunakan IPC Pipes)
 
@@ -193,94 +194,86 @@ Note:
 
 #
 ### Jawab 2a
-Jawab 2a
-pada soal 2a kita diminta untuk membuat matriks yang ber ordo 4x3 dan 3x6 yang berisikan angka 1-20 lalu kita mengkalikan kedua matriks tersebut menjadi matriks hasil :
-
-```
-matriks 4x3
-
-int sum = 0;
-	int first[4][3] = {
-		{2, 1, 1},
-		{1, 2, 0},
-		{2, 0, 1},
-		{0, 2, 0}
-	};
+Pada soal 2a kita diminta untuk membuat matriks yang ber ordo 4x3 dan 3x6 dan menyimpan dalam shared memory. Sebelum menjalankan proses perkalian matriks, lakukan setting pada shared memory sebagai berikut.
+```c
+key_t key = 1234;
+int *value;
+int shmid = shmget(key, sizeof(int) * 24, IPC_CREAT | 0644);
+value = shmat(shmid, NULL, 0);
 ```
 
-```
-matriks 3x6
+Buat matriks pertama berukuran 4x3 dan matriks kedua berukuran 3x6.
+```c
+int first[4][3] = {
+	{2, 1, 1},
+	{1, 2, 0},
+	{2, 0, 1},
+	{0, 2, 0}
+};
 
 int second[3][6] = {
-		{1, 2, 0, 1, 2, 1},
-		{1, 2, 2, 0, 2, 0},
-		{0, 1, 0, 1, 0, 1}
-	};
-    
+	{1, 2, 0, 1, 2, 1},
+	{1, 2, 2, 0, 2, 0},
+	{0, 1, 0, 1, 0, 1}
+};
 ```
-lalu kita membuat pengelompokkan dan mengurutkan pada baris dan kolom dan membuatnya menjadi bentuk matriks untuk memudahkan perkalian matriks :
 
-```
+Print isi matriks untuk memudahkan melihat proses perkalian matriks.
+```c
 printf("Matrix 4x3: \n");
-	for(int i=0; i<4; i++){
-		for(int j=0; j<3; j++){
-			printf("%d\t", first[i][j]);
-		}
-		printf("\n");
-        
-        
-	printf("Matrix 3x6: \n");
-	for(int i=0; i<3; i++){
-		for(int j=0; j<6; j++){
-			printf("%d\t", second[i][j]);
-		}
-        
-```
-kita mengkalikan kedua matriks yang terbentuk menjadi satu matriks hasil :
-```
 for(int i=0; i<4; i++){
-		for(int j=0; j<6; j++){
-			for(int k=0; k<3; k++) {
-				sum = sum + first[i][k] * second[k][j];
-			}
-			multiply[i][j] = sum;
-			sum = 0;
-		}
+	for(int j=0; j<3; j++){
+		printf("%d\t", first[i][j]);
 	}
-	
+	printf("\n");
+}
+printf("\n");
+
+printf("Matrix 3x6: \n");
+for(int i=0; i<3; i++){
+	for(int j=0; j<6; j++){
+		printf("%d\t", second[i][j]);
+	}
+}
+printf("\n");
 ```
-pada matriks hasil kita menggunakan prinsip perkalian matriks untuk menentukan ordo dari matriks hasil yaitu ketika A X B dan B X C maka ordo tersebut akan menjadi A X C , pada soal ini kita mengalikan matriks yang ber ordo 4 X 3 dan 3 X 6 sehingga bentuk dari matriks hasil adalah 4 X 6 sehingga kita membuat fungsi untuk matriks hasil dengan 
-```int multiply[4][6];``` dengan isi :
+
+Kita mengkalikan kedua matriks dan menampung hasilnya di matriks multiply. Pada matriks multiply kita menggunakan prinsip perkalian matriks untuk menentukan ordo dari matriks multiply yaitu ketika AXB dan BXC maka ordo tersebut akan menjadi AXC. Pada soal ini kita mengalikan matriks yang ber ordo 4X3 dan 3X6 sehingga bentuk dari matriks hasil adalah 4X6.
+```c
+for(int i=0; i<4; i++){
+	for(int j=0; j<6; j++){
+		for(int k=0; k<3; k++) {
+			sum = sum + first[i][k] * second[k][j];
+		}
+		multiply[i][j] = sum;
+		sum = 0;
+	}
+}
 ```
+
+Pindahkan isi dari matriks multiply ke array value sehingga dapat diakses oleh file lainnya melalui shared memory.
+```c
 printf("Matrix Hasil: \n");
-	for(int i=0; i<4; i++){
-		for(int j=0; j<6; j++){
-			value[6*i+j] = multiply[i][j];
-			printf("%d\t",multiply[i][j]);
-		}
-		printf("\n");
+for(int i=0; i<4; i++){
+	for(int j=0; j<6; j++){
+		value[6*i+j] = multiply[i][j];
+		printf("%d\t",multiply[i][j]);
 	}
+	printf("\n");
+}
+shmdt(value);
 ```
-kita juga menambahkan untuk menggunakan shared memory karena matriks hasil akan digunakan pada soal berikutnya :
-```
-key_t key = 1234;
-	int *value;
-	int shmid = shmget(key, sizeof(int) * 24, IPC_CREAT | 0644);
-	value = shmat(shmid, NULL, 0);
-```
-
-
 
 #
 ### Jawab 2b
-Jawab 2b
-pada soal ini kita diminta mengoperasikan kembali matriks a yang kita dapat pada soal 2a dengan soal b yang terdapat pada soal,untuk pengoperasiannya terdapat beberapa ketentuan dimana matrik A menjadi angka untuk faktorian lalu matriks b menjadi batas maksimal faktorialnya dengan ini kita mendapat rules 
-
-jika a>=b  maka a!/(a-b)!
-jika b > a maka a!
-jika 0 maka output akan tetap 0
-
+Pada soal ini kita diminta mengoperasikan kembali matriks A yang kita dapat pada soal 2a dengan matriks B yang terdapat pada soal 2b. Untuk pengoperasiannya terdapat beberapa ketentuan dimana matriks A menjadi angka untuk faktorial lalu matriks B menjadi batas maksimal faktorialnya. Dengan ini kita dapat membuat fungsi untuk threadnya.
+```txt
+jika a >= b maka a!/(a-b)!
+jika b >  a maka a!
+jika 0      maka output akan tetap 0
 ```
+
+```c
 void *fact(void* arg){
 	data* d = (data*) arg;
 	if(d->angka1 == 0 || d->angka2 == 0) d->hasil = 0;
@@ -289,118 +282,117 @@ void *fact(void* arg){
 }
 ```
 
-pertama kita membuat matriks b dan memanggil matriks hasil pada soal 2a menggunakan shared memory :
+Pertama kita membuat matriks B dan memanggil array value pada soal 2a menggunakan shared memory.
+```c
+key_t key = 1234;
+int *value;
+int shmid = shmget(key, sizeof(int) * 24, IPC_CREAT | 0644);
+value = shmat(shmid, NULL, 0);
+
+int matrixB[24] = {
+	1, 9, 0, 1, 2, 1,
+	1, 2, 2, 0, 2, 0,
+	0, 1, 7, 1, 0, 1,
+	1, 2, 0, 1, 6, 1
+};
 ```
-void main(){
-	key_t key = 1234;
-	int *value;
-	int shmid = shmget(key, sizeof(int) * 24, IPC_CREAT | 0644);
-	value = shmat(shmid, NULL, 0);
-	
-	int matrixB[24] = {
-		1, 9, 0, 1, 2, 1,
-		1, 2, 2, 0, 2, 0,
-		0, 1, 7, 1, 0, 1,
-		1, 2, 0, 1, 6, 1
-	};
-    
-```
-lalu kita memanggil matriks hasil pada soal 2a untuk dimasukan kedalam matrik a pada soal ini,kita menggunakan mutual exclusion sehingga code nya menjadi :
-```
+
+Tampilkan isi array value pada soal 2a untuk dimasukan ke dalam matriks A. Pada soal ini kita menggunakan thread untuk perhitungan tiap sel nya.
+```c
 pthread_t tid[24];
-	data d[24];
-	printf("Matrix A: \n");
-	for(int i=0; i<24; i++){
-		d[i].angka1 = value[i];
-		d[i].angka2 = matrixB[i];
-		if(i%6 == 0 && i != 0) printf("\n");
-		printf("%d\t", value[i]);
-		pthread_create(&tid[i], NULL, &fact, (void*)&d[i]);
-	}
-    
+data d[24];
+printf("Matrix A: \n");
+for(int i=0; i<24; i++){
+	d[i].angka1 = value[i];
+	d[i].angka2 = matrixB[i];
+	if(i%6 == 0 && i != 0) printf("\n");
+	printf("%d\t", value[i]);
+	pthread_create(&tid[i], NULL, &fact, (void*)&d[i]);
+}
 ```
-kita juga memanggil matriks b pada fungsi berikut :
-```
+
+Tampilkan isi matriks B dan lakukan join thread.
+```c
 printf("Matrix B: \n");
-	for(int i=0; i<24; i++){
-		if(i%6 == 0 && i != 0) printf("\n");
-		printf("%d\t", matrixB[i]);
-		pthread_join(tid[i],NULL);
-	}
-	printf("\n\n");
-    
-```
-lalu kita mengkalikan kedua matriks yang sudah terpanggil menggunakan fungsi berikut :
+for(int i=0; i<24; i++){
+	if(i%6 == 0 && i != 0) printf("\n");
+	printf("%d\t", matrixB[i]);
+	pthread_join(tid[i],NULL);
+}
+printf("\n\n");
 ```
 
+Tampilkan matriks hasil.
+```c
 printf("Matrix Hasil: \n");
-	for(int i=0; i<24; i++){
-		if(i%6 == 0 && i != 0) printf("\n");
-		printf("%lld\t", d[i].hasil);
-	}
-    
+for(int i=0; i<24; i++){
+	if(i%6 == 0 && i != 0) printf("\n");
+	printf("%lld\t", d[i].hasil);
+}
 ```
 
- #
+#
 ### Jawab 2c
-Jawab 2c
-pada soal ini kita diminta untuk mencari 5 proses teratas yang memakan resources komputer menggunakan command ```ps aux| sort -nrk 3,3|head -5``` pertama kita membuat command yang menampilkan seluruh proses pada user lalu kita menggunakan pipe-fork untuk menjalankan program tersebut
-```
-int main(){
-	pid_t child_id;
-	int status;
-	int fp1[2];
-	int fp2[2];
-	char output[1000];
-	
-	if(pipe(fp1)==-1){
-		fprintf(stderr, "Pipe Failed" );
-		return 1;
-	}
-	if(pipe(fp2)==-1){
-		fprintf(stderr, "Pipe Failed" );
-		return 1;
-	}
-	
-	child_id = fork();
-	if(child_id < 0) exit(0);
-	if(child_id == 0){
-		dup2(fp1[1], STDOUT_FILENO);
-		close(fp1[0]);
-		char *argv[] = {"ps", "aux", NULL};
-		execv("/bin/ps", argv);
-	}
+Pada soal ini kita diminta untuk mencari 5 proses teratas yang memakan resources komputer menggunakan command `ps aux | sort -nrk 3,3 | head -5`. Pertama kita membuat command yang menampilkan seluruh proses pada user lalu kita menggunakan pipe-fork untuk menjalankan program tersebut.
+```c
+pid_t child_id;
+int status;
+int fp1[2];
+int fp2[2];
+char output[1000];
+
+if(pipe(fp1)==-1){
+	fprintf(stderr, "Pipe Failed" );
+	return 1;
+}
+if(pipe(fp2)==-1){
+	fprintf(stderr, "Pipe Failed" );
+	return 1;
+}
+
+child_id = fork();
+if(child_id < 0) exit(0);
+if(child_id == 0){
+	dup2(fp1[1], STDOUT_FILENO);
+	close(fp1[0]);
+	char *argv[] = {"ps", "aux", NULL};
+	execv("/bin/ps", argv);
+}
 ```
 
-lalu setelah kita menampilkan seluruh proses user kita mengurutkan menggunakan sort :
-```
+Lalu setelah kita menampilkan seluruh proses user, lakukan pengurutkan menggunakan sort.
+```c
 while(wait(&status) > 0);
-	dup2(fp1[0], STDIN_FILENO);
-	close(fp1[1]);
-	
-	child_id = fork();
-	if(child_id < 0) exit(0);
-	if(child_id == 0){
-		dup2(fp2[1], STDOUT_FILENO);
-		close(fp2[0]);
-		char *argv[] = {"sort", "-nrk", "3,3", NULL};
-		execv("/usr/bin/sort", argv);
+dup2(fp1[0], STDIN_FILENO);
+close(fp1[1]);
+
+child_id = fork();
+if(child_id < 0) exit(0);
+if(child_id == 0){
+	dup2(fp2[1], STDOUT_FILENO);
+	close(fp2[0]);
+	char *argv[] = {"sort", "-nrk", "3,3", NULL};
+	execv("/usr/bin/sort", argv);
+}
 ```
 
-lalu setelah mengurutkan kita menyeleksi menjadi 5 saja proses yang paling banyak memakan resource pada komputer
-```
+Lalu setelah mengurutkan, kita menyeleksi menjadi 5 proses teratas yang paling banyak memakan resource pada komputer.
+```c
 while(wait(&status) > 0);
-	dup2(fp2[0], STDIN_FILENO);
-	close(fp2[1]);
-	char *argv[] = {"head", "-5", NULL};
-	execv("/usr/bin/head", argv);
-	return 0;
+dup2(fp2[0], STDIN_FILENO);
+close(fp2[1]);
+char *argv[] = {"head", "-5", NULL};
+execv("/usr/bin/head", argv);
+return 0;
 ```
-pada soal ini kita menggunakan fungsi ```fork``` yang berguna untuk spawning process,lalu kita menggunakan ```wait``` untuk menunggu process menyelesaikan tugasnya terlebih dahulu lalu ```exec``` digunakan untuk menjalankan program baru dan menggantikan program yang sedang berjalan.
+
+Pada soal ini kita menggunakan fungsi `fork` yang berguna untuk spawning process, lalu kita menggunakan `wait` untuk menunggu process sebelumnya menyelesaikan tugasnya terlebih dahulu, lalu `execv` digunakan untuk menjalankan suatu perintah dan menghentikan child yang sedang berjalan.
 
 #
 ### Kendala
-Isi kendala
+1. Sedikit bingung untuk shared memory pada array 2D lalu diakalin dengan array 1D.
+2. Deskripsi pada soal 2b sedikit membingungkan, lalu kita mengasumsikan hasil dari soal 2a sebagai matriks A.
+3. Salah saat melakukan pipes pada soal 2c hingga program tidak berhenti dan sekarang sudah diperbaiki.
 
 #
 ## Penyelesaian Soal No.3
