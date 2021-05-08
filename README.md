@@ -120,39 +120,529 @@ Struktur Direktori:
 
 #
 ### Jawab 1a
-Jawab 1a
+Pada soal ini, client diberikan pilihan register atau login. Kami menambahkan pilihan exit untuk keluar dari aplikasi.
+```c
+//Pada Client
+
+printf("Menu:\n1. Register\n2. Login\n3. Exit\nPilih: ");
+scanf("%s", cmd);
+if(strcmp(cmd, "register") == 0){
+	strcpy(username, "r ");
+	printf("ID: ");
+	getchar();
+	scanf("%s", temp);
+	strcat(username, temp);
+	printf("Password: ");
+	getchar();
+	scanf("%s", pass);
+	strcat(username, "\t");
+	strcat(username, pass);
+	send(sock, username, strlen(username), 0);
+	printf("Register berhasil\n");
+}
+else if(strcmp(cmd, "login") == 0){
+	strcpy(username, "l ");
+	printf("ID: ");
+	getchar();
+	scanf("%s", temp);
+	strcat(username, temp);
+	printf("Password: ");
+	getchar();
+	scanf("%s", pass);
+	strcat(username, "\t");
+	strcat(username, pass);
+	send(sock, username, strlen(username), 0);
+
+	...
+}
+else if(strcmp(cmd, "exit") == 0){
+	send(sock, cmd, sizeof(cmd), 0);
+	break;
+}
+else printf("Input salah\n");
+```
+
+Dikarenakan sistem harus multi-connections, maka akan digunakan thread setiap ada client yang connect. Jika terdapat 2 koneksi atau lebih maka harus menunggu sampai client pertama keluar untuk bisa melakukan login dan mengakses aplikasinya. Hal ini dilakukan dengan suatu variabel bantuan `conn_cek` yang awalnya diset FALSE dimana jika ada client yang connect maka conn_cek diset TRUE sehingga client lainnya hanya bisa connect tapi belum bisa mengakses pilihan menu.
+```c
+//Pada Server
+
+while(conn_cek);
+conn_cek = 1;
+
+while(log){
+	send(cid, "ready", 5, 0);
+
+	char data[1024], id[1024], ps[1024], kode;
+	memset(data, 0, sizeof(data));
+	read(cid, data, sizeof(data));
+
+	if(strcmp(data, "exit") == 0){
+		printf("Exit berhasil\n");
+		conn_cek = 0;
+		break;
+	}
+	
+	...
+}
+```
+
+```c
+//Pada Client
+
+while(1){
+	printf("Harap Menunggu\n\n");
+	char stat[1024] = {0};
+	read(sock, stat, sizeof(stat));
+	while(strcmp(stat, "ready") != 0){
+		memset(stat, 0, sizeof(stat));
+		read(sock, stat, sizeof(stat));
+	}
+	memset(stat, 0, sizeof(stat));
+	
+	...
+}
+```
+
+Semua akun dari pengguna yang register akan disimpan pada **akun.txt** dan digunakan pula pada pengecekan akun saat login.
+```c
+//Pada Server
+
+if(kode == 'r'){
+	akun_cek = 1;
+	akun akun_reg;
+	strcpy(akun_reg.id, id);
+	strcpy(akun_reg.ps, ps);
+	list_akun[akun_n] = akun_reg;
+	akun_n++;
+
+	while(file_cek);
+	file_cek = 1;
+	FILE *filep = fopen("akun.txt", "a");
+	fprintf(filep, "%s:%s\n", id, ps);
+	fclose(filep);
+
+	file_cek = 0;
+	akun_cek = 0;
+
+	printf("Register berhasil\n");
+}
+else if(kode == 'l'){
+	bool done = 0;
+	while(akun_cek);
+	for(int i=0; i<akun_n; i++){
+		if((strcmp(id, list_akun[i].id) == 0) && (strcmp(ps, list_akun[i].ps) == 0)){
+			done = 1;
+			break;
+		}
+	}
+
+	send(cid, &done, sizeof(done), 0);
+	
+	...
+}
+```
 
 #
 ### Jawab 1b
-Jawab 1b
+Terdapat **files.tsv** dan folder **FILES** pada folder Server. Pembuatan folder **FILES** dilakukan pada saat server berjalan.
+```c
+mkdir("FILES", 0755);
+```
+
+Kemudian untuk **files.tsv** akan diakses pada saat penambahan dan penghapusan data dan akan ditunjukkan pada soal selanjutnya.
 
 #
 ### Jawab 1c
-Jawab 1c
+Terdapat perintah `add` untuk menambahkan files ke server. Client mengirimkan nama publisher, tahun publikasi, dan filepath lokasi file yang akan dikirimkan.
+```c
+if(strcmp(cmd2, "add") == 0){
+	send(sock, cmd2, sizeof(cmd2), 0);
+	char pub[1024], thn[1024], path[1024], res[1024];
+
+	printf("Publisher: ");
+	getchar();
+	scanf("%s", pub);
+	strcpy(res, pub);
+	printf("Tahun Publikasi: ");
+	getchar();
+	scanf("%s", thn);
+	strcat(res, "\t");
+	strcat(res, thn);
+	printf("Filepath: ");
+	getchar();
+	scanf("%s", path);
+	strcat(res, "\t");
+	strcat(res, path);
+	send(sock, res, strlen(res), 0);
+
+	char feed[1024] = {0};
+	read(sock, feed, sizeof(feed));
+	if(strcmp(feed, "Sukses") == 0) printf("Add berhasil\n");
+	else printf("Add gagal\n");
+}
+```
+
+Kemudian server menerima file tersebut dan dimasukkan ke folder **FILES**. Lakukan penambahan data file ke **files.tsv** juga.
+```c
+if(strcmp(cmd, "add") == 0){
+	char res[1024] = {0};
+	read(cid, res, sizeof(res));
+
+	char pub[1024]={0}, thn[1024]={0}, path[1024]={0};
+
+	int idx = 0;
+	for(int i=0; i<strlen(res); i++){
+		if(res[i] == '\t') break;
+		pub[idx] = res[i];
+		idx++;
+	}
+	int idx2 = 0;
+	for(int i=idx+1; i<strlen(res); i++){
+		if(res[i] == '\t') break;
+		thn[idx2] = res[i];
+		idx2++;
+	}
+	int idx3 = 0;
+	for(int i=idx+1+idx2+1; i<strlen(res); i++){
+		path[idx3] = res[i];
+		idx3++;
+	}
+
+	//copy file di path ke FILES
+	char path_tmp[1024];
+	strcpy(path_tmp, path);
+	char *srcName = checkName(path_tmp);
+	char *curr = getenv("PWD");
+	char destP[400];
+	sprintf(destP, "%s/FILES/%s", curr, srcName);
+
+	printf("%s\n%s\n", path, destP);
+
+	FILE *fsrc = fopen(path, "r");
+	if(fsrc == NULL){
+		printf("File tidak ada\n");
+		send(cid, "Gagal", 5, 0);
+	}
+	else{
+		FILE *fdst = fopen(destP, "w");
+		char tmp = fgetc(fsrc);
+		while(tmp != EOF){
+			fputc(tmp, fdst);
+			tmp = fgetc(fsrc);
+		}
+		fclose(fsrc);
+		fclose(fdst);
+
+		//insert to tsv
+		file_tsv file_insert;
+		strcpy(file_insert.path, destP);
+		strcpy(file_insert.pub, pub);
+		strcpy(file_insert.thn, thn);
+		memset(list_file[file_n].path, 0, sizeof(list_file[file_n].path));
+		memset(list_file[file_n].pub, 0, sizeof(list_file[file_n].pub));
+		memset(list_file[file_n].thn, 0, sizeof(list_file[file_n].thn));
+		list_file[file_n] = file_insert;
+		file_n++;
+
+		FILE *ftsv = fopen("files.tsv", "a");
+		fprintf(ftsv, "%s\t%s\t%s\n", destP, pub, thn);
+		fclose(ftsv);
+
+		char path_tmp[1024];
+		strcpy(path_tmp, destP);
+		char *srcName = checkName(path_tmp);
+		FILE *flog = fopen("running.log", "a");
+		fprintf(flog, "Tambah : %s (%s:%s)\n", srcName, id, ps);
+		fclose(flog);
+
+		printf("Add berhasil\n");
+		send(cid, "Sukses", 6, 0);
+	}
+
+}
+```
 
 #
 ### Jawab 1d
-Jawab 1d
+Terdapat perintah `download` sehingga client dapat mendownload file yang ada di server. Client mengirimkan nama file yang akan di download.
+```c
+else if(strcmp(cmd2, "download") == 0){
+	send(sock, cmd2, sizeof(cmd2), 0);
+	char fileName[1024];
+
+	scanf("%s", fileName);
+	send(sock, fileName, sizeof(fileName), 0);
+
+	char feed[1024] = {0};
+	read(sock, feed, sizeof(feed));
+	if(strcmp(feed, "Sukses") == 0) printf("Download berhasil\n");
+	else printf("Download gagal\n");
+}
+```
+
+Server mengecek file tersebut pada **files.tsv**. Jika tidak valid maka mengirimkan pesan error. Jika valid maka file akan dikirim dan diterima client pada folder Client.
+```c
+else if(strcmp(cmd, "download") == 0){
+	char fileName[1024] = {0};
+	read(cid, fileName, sizeof(fileName));
+
+	//cek fileName di tsv
+	char path[1024];
+	bool ada = 0;
+	for(int i=0; i<file_n; i++){
+		char path_tmp[1024];
+		strcpy(path, list_file[i].path);
+		strcpy(path_tmp, list_file[i].path);
+		char *srcName = checkName(path_tmp);
+		if(strcmp(fileName, srcName) == 0){
+			ada = 1;
+			break;
+		}
+	}
+
+	//copy ke client
+	if(ada){
+		char destP[400];
+		sprintf(destP, "/home/aldo/Sisop/Modul3/Soal1/Client/%s", fileName);
+		FILE *fsrc = fopen(path, "r");
+		FILE *fdst = fopen(destP, "w");
+		char tmp = fgetc(fsrc);
+		while(tmp != EOF){
+			fputc(tmp, fdst);
+			tmp = fgetc(fsrc);
+		}
+		fclose(fsrc);
+		fclose(fdst);
+
+		printf("Download berhasil\n");
+		send(cid, "Sukses", 6, 0);
+	}
+	else{
+		printf("File tidak ada\n");
+		send(cid, "Gagal", 5, 0);
+	}
+}
+```
 
 #
 ### Jawab 1e
-Jawab 1e
+Terdapat perintah `delete` untuk menghapus file yang ada di server. Client mengirimkan nama file yang akan di delete.
+```c
+else if(strcmp(cmd2, "delete") == 0){
+	send(sock, cmd2, sizeof(cmd2), 0);
+	char fileName[1024];
+
+	scanf("%s", fileName);
+	send(sock, fileName, sizeof(fileName), 0);
+
+	char feed[1024] = {0};
+	read(sock, feed, sizeof(feed));
+	if(strcmp(feed, "Sukses") == 0) printf("Delete berhasil\n");
+	else printf("Delete gagal\n");
+}
+```
+
+Server mengecek file tersebut pada **files.tsv**. Jika tidak valid maka mengirimkan pesan error. Jika valid maka file akan direname menjadi `old-NamaFile.ekstensi` dan data file pada **files.tsv** dihapus.
+```c
+else if(strcmp(cmd, "delete") == 0){
+	char fileName[1024] = {0};
+	read(cid, fileName, sizeof(fileName));
+
+	//cek fileName di tsv
+	char path[1024];
+	bool ada = 0;
+	for(int i=0; i<file_n; i++){
+		char path_tmp[1024];
+		strcpy(path, list_file[i].path);
+		strcpy(path_tmp, list_file[i].path);
+		char *srcName = checkName(path_tmp);
+		if(strcmp(fileName, srcName) == 0){
+			ada = 1;
+			break;
+		}
+	}
+
+	//delete file
+	if(ada){
+		char *curr = getenv("PWD");
+		char destP[400];
+		sprintf(destP, "%s/FILES/old-%s", curr, fileName);
+		rename(path, destP);
+
+		FILE *ftsv = fopen("files.tsv", "w");
+		for(int i=0, idx_file=0; i<file_n; i++){
+			if(strcmp(path, list_file[i].path) == 0) continue;
+			fprintf(ftsv, "%s\t%s\t%s\n", list_file[i].path, list_file[i].pub, list_file[i].thn);
+			file_tsv file_baru;
+			strcpy(file_baru.path, list_file[i].path);
+			strcpy(file_baru.pub, list_file[i].pub);
+			strcpy(file_baru.thn, list_file[i].thn);
+			memset(list_file[file_n].path, 0, sizeof(list_file[file_n].path));
+			memset(list_file[file_n].pub, 0, sizeof(list_file[file_n].pub));
+			memset(list_file[file_n].thn, 0, sizeof(list_file[file_n].thn));
+			list_file[idx_file] = file_baru;
+			idx_file++;
+		}
+		fclose(ftsv);
+
+		FILE *flog = fopen("running.log", "a");
+		fprintf(flog, "Hapus : %s (%s:%s)\n", fileName, id, ps);
+		fclose(flog);
+
+		file_n--;
+		printf("Delete berhasil\n");
+		send(cid, "Sukses", 6, 0);
+	}
+	else{
+		printf("File tidak ada\n");
+		send(cid, "Gagal", 5, 0);
+	}
+}
+```
 
 #
 ### Jawab 1f
-Jawab 1f
+Terdapat perintah `see` untuk melihat semua isi **files.tsv**. Client hanya cukup mengirimkan `see`.
+```c
+else if(strcmp(cmd2, "see") == 0){
+	send(sock, cmd2, sizeof(cmd2), 0);
+	char feed[2048] = {0};
+	read(sock, feed, sizeof(feed));
+	while((strcmp(feed, "Sukses") != 0) && (strcmp(feed, "Gagal") != 0)){
+		printf("%s", feed);
+		memset(feed, 0, sizeof(feed));
+		read(sock, feed, sizeof(feed));
+	}
+	if(strcmp(feed, "Sukses") == 0) printf("See berhasil\n");
+	else printf("See gagal\n");
+}
+```
+
+Server mengirimkan isi dari **files.tsv** ke client dan ditampilkan sesuai format pada soal.
+```c
+else if(strcmp(cmd, "see") == 0){
+	for(int i=0; i<file_n; i++){
+		char path_tmp[1024];
+		strcpy(path_tmp, list_file[i].path);
+		char *srcName = checkName(path_tmp);
+
+		char ext_tmp[1024];
+		strcpy(ext_tmp, list_file[i].path);
+		char *srcExt = checkExt(ext_tmp);
+		char ext_fin[1024];
+		strcpy(ext_fin, srcExt);
+
+		char name[2048];
+		sprintf(name, "Nama:%s\n", srcName);
+		char pub[2048];
+		sprintf(pub, "Publisher:%s\n", list_file[i].pub);
+		char thn[2048];
+		sprintf(thn, "Tahun publishing:%s\n", list_file[i].thn);
+		char ext[2048];
+		sprintf(ext, "Ekstensi File : %s\n", ext_fin);
+		char path[2048];
+		sprintf(path, "Filepath : %s\n", list_file[i].path);
+		char empty[2048] = "\n";
+
+		send(cid, name, sizeof(name), 0);
+		send(cid, pub, sizeof(pub), 0);
+		send(cid, thn, sizeof(thn), 0);
+		send(cid, ext, sizeof(ext), 0);
+		send(cid, path, sizeof(path), 0);
+		send(cid, empty, sizeof(empty), 0);
+	}
+
+	printf("See berhasil\n");
+	send(cid, "Sukses", 6, 0);
+}
+```
 
 #
 ### Jawab 1g
-Jawab 1g
+Terdapat perintah `find` untuk melakukan pencarian nama file. Client mengirimkan suatu string yang merupakan substring dari nama file yang dicari.
+```c
+else if(strcmp(cmd2, "find") == 0){
+	send(sock, cmd2, sizeof(cmd2), 0);
+	char fileName[1024];
+
+	scanf("%s", fileName);
+	send(sock, fileName, sizeof(fileName), 0);
+
+	char feed[1024] = {0};
+	read(sock, feed, sizeof(feed));
+	while((strcmp(feed, "Sukses") != 0) && (strcmp(feed, "Gagal") != 0)){
+		printf("%s", feed);
+		memset(feed, 0, sizeof(feed));
+		read(sock, feed, sizeof(feed));
+	}
+
+	if(strcmp(feed, "Sukses") == 0) printf("Find berhasil\n");
+	else printf("Find gagal\n");
+}
+```
+
+Server mencari nama file yang mengandung string dari client lalu mengirimkan isi data file ke client dan ditampilkan sesuai format pada soal.
+```c
+else if(strcmp(cmd, "find") == 0){
+	bool found = 0;
+	char fileName[1024] = {0};
+	read(cid, fileName, sizeof(fileName));
+
+	for(int i=0; i<file_n; i++){
+		char path_tmp[1024];
+		strcpy(path_tmp, list_file[i].path);
+		char *srcName = checkName(path_tmp);
+
+		if(strstr(srcName, fileName) == NULL) continue;
+
+		char ext_tmp[1024];
+		strcpy(ext_tmp, list_file[i].path);
+		char *srcExt = checkExt(ext_tmp);
+		char ext_fin[1024];
+		strcpy(ext_fin, srcExt);
+
+		char name[2048];
+		sprintf(name, "Nama:%s\n", srcName);
+		char pub[2048];
+		sprintf(pub, "Publisher:%s\n", list_file[i].pub);
+		char thn[2048];
+		sprintf(thn, "Tahun publishing:%s\n", list_file[i].thn);
+		char ext[2048];
+		sprintf(ext, "Ekstensi File : %s\n", ext_fin);
+		char path[2048];
+		sprintf(path, "Filepath : %s\n", list_file[i].path);
+		char empty[2048] = "\n";
+
+		send(cid, name, sizeof(name), 0);
+		send(cid, pub, sizeof(pub), 0);
+		send(cid, thn, sizeof(thn), 0);
+		send(cid, ext, sizeof(ext), 0);
+		send(cid, path, sizeof(path), 0);
+		send(cid, empty, sizeof(empty), 0);
+
+		found = 1;
+	}
+
+	if(found){
+		printf("Find berhasil\n");
+		send(cid, "Sukses", 6, 0);
+	}
+	else{
+		printf("File tidak ada\n");
+		send(cid, "Gagal", 5, 0);
+	}
+}
+```
 
 #
 ### Jawab 1h
-Jawab 1h
+Terdapat **running.log** untuk menyimpan log saat terjadi pertambahan dan penghapusan file di server. Hal ini dilakukan pada saat client menjalankan perintah `add` dan `delete`. Format pengisian log sesuai yang diminta soal dan sudah diimplementasikan pada soal sebelumnya.
 
 #
 ### Kendala
-Isi kendala
+1. Soalnya panjang banget dan kompleks sekali.
+2. Kebingungan untuk multi-connection karena pada modul hanya 1 connection.
+3. Penggunaan socket sebagai penghubung antara client dan server sangat banyak karena fitur aplikasi cukup banyak serta untuk error handling.
 
 #
 ## Penyelesaian Soal No.2
