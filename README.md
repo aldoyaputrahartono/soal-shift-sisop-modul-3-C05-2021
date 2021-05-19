@@ -764,6 +764,7 @@ for(int i=0; i<4; i++){
 }
 shmdt(value);
 ```
+![21](https://user-images.githubusercontent.com/31863229/118824463-120f9f00-b8e4-11eb-935e-37ec64c13188.PNG)
 
 #
 ### Jawab 2b
@@ -831,6 +832,7 @@ for(int i=0; i<24; i++){
 	printf("%lld\t", d[i].hasil);
 }
 ```
+![22](https://user-images.githubusercontent.com/31863229/118824474-1471f900-b8e4-11eb-8201-58e550caf424.PNG)
 
 #
 ### Jawab 2c
@@ -888,6 +890,8 @@ return 0;
 ```
 
 Pada soal ini kita menggunakan fungsi `fork` yang berguna untuk spawning process, lalu kita menggunakan `wait` untuk menunggu process sebelumnya menyelesaikan tugasnya terlebih dahulu, lalu `execv` digunakan untuk menjalankan suatu perintah dan menghentikan child yang sedang berjalan.
+
+![23](https://user-images.githubusercontent.com/31863229/118824478-150a8f80-b8e4-11eb-92f0-dc8b545f730b.PNG)
 
 #
 ### Kendala
@@ -1014,6 +1018,8 @@ Dan yang terakhir di nomor 3a ini yaitu membuat thread join dari semua thread ya
 	for(int i=0; i<count; i++) pthread_join(tid[i], NULL);
 	return 0;
 ```
+![31](https://user-images.githubusercontent.com/31863229/118824680-3f5c4d00-b8e4-11eb-97c2-41be664d45a0.PNG)
+![32](https://user-images.githubusercontent.com/31863229/118824694-42573d80-b8e4-11eb-86f1-133628a35500.PNG)
 
 #
 ### Jawab 3b
@@ -1072,6 +1078,7 @@ void categorizeFolder(char *folderPath, int threadSize){
     closedir(fd);
 }
 ```
+![33](https://user-images.githubusercontent.com/31863229/118824701-43886a80-b8e4-11eb-89ac-cb7c0ff07afa.PNG)
 
 #
 ### Jawab 3c
@@ -1091,6 +1098,8 @@ else if(argc == 2 && strcmp(argv[1], "*") == 0){
 	closedir(dir);
 }
 ```
+![34](https://user-images.githubusercontent.com/31863229/118824706-44b99780-b8e4-11eb-8602-4cf3e9db24b8.PNG)
+![35](https://user-images.githubusercontent.com/31863229/118824713-45eac480-b8e4-11eb-814e-f62810c1ccb5.PNG)
 
 #
 ### Jawab 3d
