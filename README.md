@@ -202,6 +202,8 @@ while(1){
 	...
 }
 ```
+![11](https://user-images.githubusercontent.com/31863229/118823301-16878800-b8e3-11eb-8363-2c6093acf0a6.PNG)
+![12](https://user-images.githubusercontent.com/31863229/118823412-2a32ee80-b8e3-11eb-951f-419ab46338ec.PNG)
 
 Semua akun dari pengguna yang register akan disimpan pada **akun.txt** dan digunakan pula pada pengecekan akun saat login.
 ```c
@@ -241,6 +243,8 @@ else if(kode == 'l'){
 	...
 }
 ```
+![13](https://user-images.githubusercontent.com/31863229/118823417-2b641b80-b8e3-11eb-9e2b-e6e0b6261057.PNG)
+![14](https://user-images.githubusercontent.com/31863229/118823421-2bfcb200-b8e3-11eb-80f8-1a3c697319a0.PNG)
 
 #
 ### Jawab 1b
@@ -361,6 +365,7 @@ if(strcmp(cmd, "add") == 0){
 
 }
 ```
+![15](https://user-images.githubusercontent.com/31863229/118823433-2e5f0c00-b8e3-11eb-9c02-e26666300fbb.PNG)
 
 #
 ### Jawab 1d
@@ -423,6 +428,7 @@ else if(strcmp(cmd, "download") == 0){
 	}
 }
 ```
+![16](https://user-images.githubusercontent.com/31863229/118823440-2f903900-b8e3-11eb-9f43-e3e8473f9084.PNG)
 
 #
 ### Jawab 1e
@@ -499,6 +505,7 @@ else if(strcmp(cmd, "delete") == 0){
 	}
 }
 ```
+![17](https://user-images.githubusercontent.com/31863229/118823447-30c16600-b8e3-11eb-8f2f-98e61d20f315.PNG)
 
 #
 ### Jawab 1f
@@ -556,6 +563,7 @@ else if(strcmp(cmd, "see") == 0){
 	send(cid, "Sukses", 6, 0);
 }
 ```
+![18](https://user-images.githubusercontent.com/31863229/118823456-3159fc80-b8e3-11eb-98ea-a7eded2f97f4.PNG)
 
 #
 ### Jawab 1g
@@ -633,10 +641,13 @@ else if(strcmp(cmd, "find") == 0){
 	}
 }
 ```
+![19](https://user-images.githubusercontent.com/31863229/118823461-328b2980-b8e3-11eb-9d60-d62dcf214a42.PNG)
 
 #
 ### Jawab 1h
 Terdapat **running.log** untuk menyimpan log saat terjadi pertambahan dan penghapusan file di server. Hal ini dilakukan pada saat client menjalankan perintah `add` dan `delete`. Format pengisian log sesuai yang diminta soal dan sudah diimplementasikan pada soal sebelumnya.
+
+![110](https://user-images.githubusercontent.com/31863229/118823470-33bc5680-b8e3-11eb-84f0-cb49798b4fe1.PNG)
 
 #
 ### Kendala
